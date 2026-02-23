@@ -1,8 +1,9 @@
 <?php
-require 'session.php';
-require 'db.php';
-require 'csrf.php';
-require 'logs/log_helper.php';
+// login.php — not an authenticated page, do NOT include session.php (auth guard)
+if (session_status() === PHP_SESSION_NONE) session_start();
+require_once 'db.php';
+require_once 'csrf.php';
+require_once 'logs/log_helper.php';
 
 // ── Security headers ──────────────────────────────────────────────────────────
 header("X-Frame-Options: SAMEORIGIN");
