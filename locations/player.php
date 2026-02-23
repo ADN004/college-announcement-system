@@ -52,108 +52,72 @@ $announcements = [];
 while ($row = $res->fetch_assoc()) {
     $announcements[] = $row;
 }
+
+// ── Extra counts for helpful empty-state messages ─────────────────────────────
+$pending_count   = 0;
+$exhausted_count = 0;
+if (empty($announcements)) {
+    $stmt2 = $conn->prepare("SELECT COUNT(*) c FROM announcements WHERE location = ? AND status = 'pending'");
+    $stmt2->bind_param("s", $label);
+    $stmt2->execute();
+    $pending_count = $stmt2->get_result()->fetch_assoc()['c'];
+
+    $stmt3 = $conn->prepare("SELECT COUNT(*) c FROM announcements WHERE location = ? AND status = 'approved' AND play_count >= play_limit");
+    $stmt3->bind_param("s", $label);
+    $stmt3->execute();
+    $exhausted_count = $stmt3->get_result()->fetch_assoc()['c'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($label) ?> Announcements</title>
     <link rel="stylesheet" href="../assets/css/style.css">
-    <style>
-        .player-wrap {
-            max-width: 600px;
-            margin: 60px auto;
-            padding: 25px;
-        }
-
-        .location-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(79,140,255,0.15);
-            border: 1px solid rgba(79,140,255,0.35);
-            color: #93c5fd;
-            font-size: 13px;
-            font-weight: 700;
-            padding: 6px 16px;
-            border-radius: 999px;
-            margin-bottom: 18px;
-        }
-
-        .player-card {
-            background: linear-gradient(180deg, #121a33, #0c1330);
-            border: 1px solid #263067;
-            border-radius: 20px;
-            padding: 36px 30px;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-
-        .player-card h1 { font-size: 28px; margin-bottom: 6px; }
-
-        .ann-title {
-            color: #93c5fd;
-            font-size: 16px;
-            margin-bottom: 20px;
-            min-height: 24px;
-        }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            padding: 30px 0;
-            color: #9ca3af;
-        }
-
-        .empty-state svg { opacity: 0.35; }
-
-        .switch-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: #9ca3af;
-            font-size: 14px;
-            margin-top: 28px;
-            transition: color 0.2s;
-        }
-
-        .switch-link:hover { color: #93c5fd; }
-
-        audio { width: 100%; margin-top: 10px; border-radius: 12px; }
-    </style>
 </head>
 <body>
 
-<div class="player-wrap">
-
-    <div style="text-align:center; margin-bottom:20px;">
-        <span class="location-badge">📍 <?= htmlspecialchars($label) ?></span>
-    </div>
-
+<div class="player-wrapper">
     <div class="player-card">
-        <h1>Announcements</h1>
-        <p class="ann-title" id="ann-title"></p>
+        <div class="location-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <?= htmlspecialchars($label) ?>
+        </div>
+
+        <h2>Announcements</h2>
 
         <?php if (empty($announcements)): ?>
             <div class="empty-state">
-                <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M11 5L6 9H2v6h4l5 4V5z"/>
-                    <line x1="23" y1="9" x2="17" y2="15"/>
-                    <line x1="17" y1="9" x2="23" y2="15"/>
-                </svg>
-                <span>No announcements available</span>
+                <div class="empty-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                </div>
+                <p>No announcements available</p>
+                <?php if ($pending_count > 0): ?>
+                    <p style="color:var(--warning); font-size:14px; margin-top:8px;">
+                        <?= (int)$pending_count ?> announcement<?= $pending_count > 1 ? 's' : '' ?> pending admin approval
+                    </p>
+                <?php endif; ?>
+                <?php if ($exhausted_count > 0): ?>
+                    <p style="color:var(--text-muted); font-size:14px; margin-top:8px;">
+                        <?= (int)$exhausted_count ?> announcement<?= $exhausted_count > 1 ? 's' : '' ?> already played to limit
+                    </p>
+                <?php endif; ?>
             </div>
         <?php else: ?>
+            <div class="visualizer" id="visualizer">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            </div>
+            <p class="now-playing">Now Playing</p>
+            <h3 id="title"></h3>
             <audio id="player" controls autoplay></audio>
         <?php endif; ?>
 
-        <div>
-            <a class="switch-link" href="auth.php">← Switch Location</a>
-        </div>
+        <a href="auth.php" class="back-link" style="margin-top:28px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Switch Location
+        </a>
     </div>
-
 </div>
 
 <script>
@@ -161,15 +125,20 @@ const list     = <?= json_encode($announcements) ?>;
 const locSlug  = <?= json_encode($loc_slug) ?>;
 let index      = 0;
 const player   = document.getElementById('player');
-const annTitle = document.getElementById('ann-title');
+const title    = document.getElementById('title');
+const visualizer = document.getElementById('visualizer');
 
 function playNext() {
     if (index >= list.length) {
-        if (annTitle) annTitle.innerText = "✅ All announcements completed";
+        if (title) title.innerText = "All announcements completed";
+        if (visualizer) visualizer.style.display = "none";
+        const nowPlaying = document.querySelector('.now-playing');
+        if (nowPlaying) nowPlaying.textContent = "Finished";
         return;
     }
+
     const a = list[index];
-    if (annTitle) annTitle.innerText = a.title;
+    if (title) title.innerText = a.title;
     player.src = "../" + a.file_path;
     player.play();
 
@@ -180,7 +149,9 @@ function playNext() {
     };
 }
 
-if (list.length > 0) playNext();
+if (list.length > 0) {
+    playNext();
+}
 </script>
 
 </body>

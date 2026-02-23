@@ -1,5 +1,5 @@
 <?php
-session_start();
+require 'session.php';
 require 'db.php';
 require 'csrf.php';
 require 'logs/log_helper.php';
@@ -80,32 +80,43 @@ if ($locked && !$error) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Announcement System</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
-<div class="login-box">
-    <h2>Announcement System</h2>
+<div class="login-wrapper">
+    <div class="login-box">
+        <div class="logo-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+        </div>
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Sign in to the Announcement System</p>
 
-    <?php if (isset($_GET['timeout'])): ?>
-        <p style="color:#facc15; margin-bottom:12px;">Session expired. Please log in again.</p>
-    <?php endif; ?>
+        <?php if (isset($_GET['timeout'])): ?>
+            <div class="alert alert-warning">Session expired. Please log in again.</div>
+        <?php endif; ?>
 
-    <?php if ($error): ?>
-        <p style="color:#ef4444; margin-bottom:12px;"><?= htmlspecialchars($error) ?></p>
-    <?php endif; ?>
+        <?php if ($error): ?>
+            <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
 
-    <form method="POST">
-        <?= csrf_field() ?>
-        <input type="text"     name="username" placeholder="Username" required autocomplete="username">
-        <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
-        <button type="submit" <?= $locked ? 'disabled style="opacity:0.5;cursor:not-allowed"' : '' ?>>
-            Login
-        </button>
-    </form>
+        <form method="POST">
+            <?= csrf_field() ?>
+            <input type="text"     name="username" placeholder="Username" required autocomplete="username">
+            <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
+            <button type="submit" <?= $locked ? 'disabled style="opacity:0.5;cursor:not-allowed"' : '' ?>>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                Sign In
+            </button>
+        </form>
 
-    <small>Admin / Staff Login</small>
+        <p class="footer-text">Admin / Staff Login</p>
+    </div>
 </div>
 
 </body>
