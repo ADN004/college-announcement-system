@@ -1,0 +1,25 @@
+# ─── Database credentials ─────────────────────────────────────────────────────
+db.php
+
+# ─── Uploaded files (keep folder structure, ignore actual files) ──────────────
+uploads/pending/*
+uploads/approved/*
+uploads/rejected/*
+!uploads/pending/.gitkeep
+!uploads/approved/.gitkeep
+!uploads/rejected/.gitkeep
+
+# ─── Log files ────────────────────────────────────────────────────────────────
+logs/debug.log
+logs/debug.txt
+
+# ─── OS / IDE junk ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.lnk
+.idea/
+.vscode/
+
+# ─── PWA icons (add real ones before committing) ──────────────────────────────
+# pwa/icon-192.png
+# pwa/icon-512.png
