@@ -78,7 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($type === 'tts') {
             $text_content = trim($_POST['tts_text'] ?? '');
             $new          = time() . "_" . rand(1000, 9999) . ".wav";
-            shell_exec("espeak " . escapeshellarg($text_content) . " -w ../uploads/pending/$new");
+            $output_file = realpath('../uploads/pending') . DIRECTORY_SEPARATOR . $new;
+            $espeak = (PHP_OS_FAMILY === 'Windows')
+                ? '"C:\\Program Files (x86)\\eSpeak\\command_line\\espeak.exe"'
+                : 'espeak';
+            shell_exec($espeak . ' ' . escapeshellarg($text_content) . ' -w ' . escapeshellarg($output_file));
 
             if (file_exists("../uploads/pending/$new")) {
                 $file_path = "uploads/pending/$new";
