@@ -1,5 +1,6 @@
 # ─── Database credentials ─────────────────────────────────────────────────────
 db.php
+.env
 
 # ─── Uploaded files (keep folder structure, ignore actual files) ──────────────
 uploads/pending/*

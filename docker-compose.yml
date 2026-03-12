@@ -1,0 +1,64 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  College Announcement System — Docker Compose
+#
+#  Usage:
+#    1. cp .env.example .env   # fill in your passwords
+#    2. docker compose up -d
+#    3. Open http://localhost:8080
+#    4. Login: admin / admin123  (change after first login!)
+#
+#  Teardown (removes containers AND volumes):
+#    docker compose down -v
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── MySQL database ───────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE:      ${DB_NAME}
+      MYSQL_USER:          ${DB_USER}
+      MYSQL_PASSWORD:      ${DB_PASS}
+    volumes:
+      # Persist database data across container restarts
+      - db_data:/var/lib/mysql
+      # Seed database on first run
+      - ./setup.sql:/docker-entrypoint-initdb.d/01_setup.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── PHP + Apache application ──────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+    volumes:
+      # Persist uploaded audio files across container restarts/rebuilds
+      - uploads_pending:/var/www/html/uploads/pending
+      - uploads_approved:/var/www/html/uploads/approved
+      - uploads_rejected:/var/www/html/uploads/rejected
+      # Persist log files
+      - app_logs:/var/www/html/logs
+
+volumes:
+  db_data:
+  uploads_pending:
+  uploads_approved:
+  uploads_rejected:
+  app_logs:
